@@ -1,11 +1,12 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
-const cors = require('cors')
+const cors = require("cors");
 require("dotenv").config();
+
 const port = process.env.PORT || 3000;
 
-app.use(cors())
+app.use(cors());
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.k9pcb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -41,9 +42,11 @@ async function run() {
       }
     });
 
-    app.get("/tasks", async (req, res) => {
+    app.get("/tasks/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
       try {
-        const tasks = await tasksCollection.find().toArray();
+        const tasks = await tasksCollection.find(query).toArray();
 
         // Function to format category title as a key (e.g., "To Do" -> "to-do")
         const formatCategoryKey = (category) =>
@@ -71,27 +74,43 @@ async function run() {
     app.get("/categories-with-keys", async (req, res) => {
       try {
         const tasks = await tasksCollection.find().toArray();
-    
+
         // Extract unique categories
-        const uniqueCategories = [...new Set(tasks.map((task) => task.category))];
-    
+        const uniqueCategories = [
+          ...new Set(tasks.map((task) => task.category)),
+        ];
+
         // Function to format category keys
         const formatCategoryKey = (category) =>
           category.toLowerCase().replace(/\s+/g, "-");
-    
+
         // Create an array of objects with title and key
         const categoriesWithKeys = uniqueCategories.map((category) => ({
           title: category,
           key: formatCategoryKey(category),
         }));
-    
+
         res.status(200).json(categoriesWithKeys);
       } catch (err) {
         console.error("Error fetching categories:", err);
         res.status(500).json({ error: "Failed to fetch categories" });
       }
     });
-    
+
+    // Update a Task
+    app.put("/tasks/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const updatedTask = req.body;
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedTask }
+        );
+        res.json(result);
+      } catch (err) {
+        res.status(500).json({ error: "Failed to update task" });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
