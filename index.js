@@ -1,9 +1,11 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
+const cors = require('cors')
 require("dotenv").config();
 const port = process.env.PORT || 3000;
 
+app.use(cors())
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.k9pcb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -65,6 +67,31 @@ async function run() {
         res.status(500).json({ error: "Failed to fetch tasks" });
       }
     });
+
+    app.get("/categories-with-keys", async (req, res) => {
+      try {
+        const tasks = await tasksCollection.find().toArray();
+    
+        // Extract unique categories
+        const uniqueCategories = [...new Set(tasks.map((task) => task.category))];
+    
+        // Function to format category keys
+        const formatCategoryKey = (category) =>
+          category.toLowerCase().replace(/\s+/g, "-");
+    
+        // Create an array of objects with title and key
+        const categoriesWithKeys = uniqueCategories.map((category) => ({
+          title: category,
+          key: formatCategoryKey(category),
+        }));
+    
+        res.status(200).json(categoriesWithKeys);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        res.status(500).json({ error: "Failed to fetch categories" });
+      }
+    });
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
