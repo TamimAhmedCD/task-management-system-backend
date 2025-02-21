@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const tasksCollection = client.db("tasklyDB").collection("tasks");
 
@@ -71,32 +71,6 @@ async function run() {
       }
     });
 
-    app.get("/categories-with-keys", async (req, res) => {
-      try {
-        const tasks = await tasksCollection.find().toArray();
-
-        // Extract unique categories
-        const uniqueCategories = [
-          ...new Set(tasks.map((task) => task.category)),
-        ];
-
-        // Function to format category keys
-        const formatCategoryKey = (category) =>
-          category.toLowerCase().replace(/\s+/g, "-");
-
-        // Create an array of objects with title and key
-        const categoriesWithKeys = uniqueCategories.map((category) => ({
-          title: category,
-          key: formatCategoryKey(category),
-        }));
-
-        res.status(200).json(categoriesWithKeys);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        res.status(500).json({ error: "Failed to fetch categories" });
-      }
-    });
-
     // Update a Task
     app.put("/tasks/:id", async (req, res) => {
       try {
@@ -123,7 +97,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
